@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, ScrollView } from "react-native";
+import { StyleSheet, View, Text, ScrollView, Pressable, Linking } from "react-native";
 import { useState, useEffect, useRef } from "react";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import Colors from "@/constants/Colors";
@@ -151,6 +151,14 @@ export default function TabOneScreen() {
             <Text style={styles.dangerText}>
               Strona jest niebezpieczna z powodu braku szyfrowania.
             </Text>
+            <Pressable
+              style={styles.reportButton}
+              onPress={() =>
+                Linking.openURL("https://incydent.cert.pl/domena#!/lang=pl")
+              }
+            >
+              <Text style={styles.reportButtonText}>Zgłoś incydent</Text>
+            </Pressable>
           </View>
         </View>
       )}
@@ -293,5 +301,16 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#0b6623",
     textAlign: "center",
+  },
+  reportButton: {
+    marginTop: 12,
+    backgroundColor: '#cc0033',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 6,
+  },
+  reportButtonText: {
+    color: '#fff',
+    fontWeight: '700',
   },
 });
