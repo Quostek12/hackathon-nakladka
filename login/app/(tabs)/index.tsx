@@ -26,6 +26,9 @@ export default function TabOneScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scannedQRCodes, setScannedQRCodes] = useState<string[]>([]);
   const [isScanning, setIsScanning] = useState(true);
+  const [securityStatus, setSecurityStatus] = useState<
+    "danger" | "warning" | "safe" | null
+  >(null);
 
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
@@ -40,6 +43,48 @@ export default function TabOneScreen() {
       }
     })();
   }, [permission, requestPermission]);
+
+  // Obsługa skanowanego QR code
+  useEffect(() => {
+    if (scannedQRCodes.length === 0) return;
+
+    const qrData = scannedQRCodes[0];
+    const parsed = parseQRData(qrData);
+    const backendData = parsed.backendData;
+
+    // Zapytanie do backendu
+    const confirmQR = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/qr/confirm", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ backendData }),
+        });
+        console.log("QR confirmed:", await response.json());
+      } catch (error) {
+        console.error("Błąd potwierdzenia QR:", error);
+      }
+    };
+
+    confirmQR();
+
+    // Sprawdzenie bezpieczeństwa
+    const hasTLS =
+      backendData?.tls_version?.includes("TLSv1.3") ||
+      qrData.includes("TLSv1.3");
+    const hasHTTPS = qrData.toLowerCase().includes("https");
+    const hasGov = qrData.toLowerCase().includes(".gov");
+
+    if (!hasTLS || !hasHTTPS) {
+      setSecurityStatus("danger");
+    } else if (!hasGov) {
+      setSecurityStatus("warning");
+    } else {
+      setSecurityStatus("safe");
+    }
+  }, [scannedQRCodes]);
 
   // Parsowanie danych z QR code
   const parseQRData = (qrData: string) => {
@@ -100,54 +145,33 @@ export default function TabOneScreen() {
         />
       </View>
 
-      {scannedQRCodes.length > 0 &&
-        (() => {
-          const qrData = scannedQRCodes[0];
-          const parsed = parseQRData(qrData);
-          const backendData = parsed.backendData;
+      {securityStatus === "danger" && (
+        <View style={styles.lastCodeContainer}>
+          <View style={styles.dangerBox}>
+            <Text style={styles.dangerText}>
+              Strona jest niebezpieczna z powodu braku szyfrowania.
+            </Text>
+          </View>
+        </View>
+      )}
 
-          // Sprawdzenie bezpieczeństwa na podstawie Backend Data
-          const hasTLS =
-            backendData?.tls_version?.includes("TLSv1.3") ||
-            qrData.includes("TLSv1.3");
-          const hasHTTPS = qrData.toLowerCase().includes("https");
-          const hasGov = qrData.toLowerCase().includes(".gov");
+      {securityStatus === "warning" && (
+        <View style={styles.lastCodeContainer}>
+          <View style={styles.warnBox}>
+            <Text style={styles.warnText}>
+              Strona bezpieczna, ale nie rządowa.
+            </Text>
+          </View>
+        </View>
+      )}
 
-          // If missing TLSv1.3 or missing https -> red danger
-          if (!hasTLS || !hasHTTPS) {
-            return (
-              <View style={styles.lastCodeContainer}>
-                <View style={styles.dangerBox}>
-                  <Text style={styles.dangerText}>
-                    Strona jest niebezpieczna z powodu braku szyfrowania.
-                  </Text>
-                </View>
-              </View>
-            );
-          }
-
-          // If has TLS and https but not gov -> yellow warning
-          if (!hasGov) {
-            return (
-              <View style={styles.lastCodeContainer}>
-                <View style={styles.warnBox}>
-                  <Text style={styles.warnText}>
-                    Strona bezpieczna, ale nie rządowa.
-                  </Text>
-                </View>
-              </View>
-            );
-          }
-
-          // All good -> green safe
-          return (
-            <View style={styles.lastCodeContainer}>
-              <View style={styles.safeBox}>
-                <Text style={styles.safeText}>Bezpieczna strona rządowa</Text>
-              </View>
-            </View>
-          );
-        })()}
+      {securityStatus === "safe" && (
+        <View style={styles.lastCodeContainer}>
+          <View style={styles.safeBox}>
+            <Text style={styles.safeText}>Bezpieczna strona rządowa</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
