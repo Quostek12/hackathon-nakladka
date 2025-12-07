@@ -4,25 +4,60 @@ if (document.readyState === "loading") {
   init();
 }
 
-async function init() {
-  await fetch("https://api.ssllabs.com/api/v3/analyze?host=example.com")
+async function getSiteSecurityInfo() {
+  const info = {};
+
+  // 1. Podstawowe dane URL
+  const url = new URL(window.location.href);
+  info.fullUrl = url.href;
+  info.domain = url.hostname;
+  info.protocol = url.protocol;
+  info.port = url.port || (url.protocol === "https:" ? "443" : "80");
+  info.origin = url.origin;
+
+  // 2. Dane o połączeniu (HTTPS wymusza secure context)
+  info.isSecureContext = window.isSecureContext;
+
+  // 3. Obsługiwane technologie bezpieczeństwa
+  info.csp =
+    document.querySelector("meta[http-equiv='Content-Security-Policy']")
+      ?.content || null;
+
+  info.referrerPolicy = document.referrer
+    ? document.referrer
+    : document.querySelector("meta[name='referrer']")?.content || "default";
+
+  info.cookies = document.cookie
+    ? document.cookie.split(";").map((c) => c.trim())
+    : [];
+
+  // 4. Service Workers (mogą zmieniać ruch)
+  if ("serviceWorker" in navigator) {
+    info.serviceWorkers = await navigator.serviceWorker
+      .getRegistrations()
+      .then((regs) => regs.map((r) => r.active?.scriptURL || r));
+  } else {
+    info.serviceWorkers = [];
+  }
+
+  await fetch(`https://api.ssllabs.com/api/v3/analyze?host=${info.domain}`)
     .then((response) => response.json())
     .then((data) => {
-      console.log(data); // Zawiera dane o certyfikacie SSL
+      info.ssllabs = data;
     })
     .catch((error) => {
-      console.error("Błąd przy pobieraniu danych SSL:", error);
+      info.ssllabs = { error: "Nie udało się pobrać danych z SSL Labs" };
     });
-  // 2. Dodanie banera na górze strony
-  const originalFetch = window.fetch;
 
-  window.fetch = async (url, options) => {
-    const domain = new URL(url).hostname;
-    console.log("Domena zapytania:", domain);
-    return originalFetch(url, options);
-  };
+  return info;
+}
+
+async function init() {
+  let dane = await getSiteSecurityInfo();
   const bar = document.createElement("div");
-  bar.textContent = "To jest nakładka z mojego rozszerzenia 🙃 Dane ->" + dane;
+  bar.textContent =
+    "To jest nakładka z mojego rozszerzenia 🙃 Dane ->" +
+    JSON.stringify(dane, null, 2);
   bar.style.cssText = `
     position: fixed;
     top: 0;
