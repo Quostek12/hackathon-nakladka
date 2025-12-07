@@ -1,32 +1,31 @@
-const overlay = document.createElement("div");
-overlay.style.cssText = `
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 260px;
-  min-height: 80px;
-  background: rgba(15,23,42,0.92);
-  color: #e5e7eb;
-  padding: 12px 14px;
-  z-index: 999999999;
-  font-family: system-ui, sans-serif;
-  font-size: 13px;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-`;
-overlay.innerText = "Ładowanie danych...";
-document.body.appendChild(overlay);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
 
-// helper do API przeglądarki (Chrome/Firefox)
-const api = typeof browser !== "undefined" ? browser : chrome;
+function init() {
+  // 1. Zmiana tytułu strony
+  document.title = "[EXT] " + document.title;
 
-// pytamy background o dane
-api.runtime.sendMessage({ type: "GET_DATA" }, (response) => {
-  if (!response || response.error) {
-    overlay.innerText = "Błąd: " + (response?.error || "brak odpowiedzi");
-    return;
-  }
+  // 2. Dodanie banera na górze strony
+  const bar = document.createElement("div");
+  bar.textContent = "To jest nakładka z mojego rozszerzenia 🙃";
+  bar.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 16px;
+    background: #0f172a;
+    color: #e5e7eb;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    z-index: 999999999;
+    box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  `;
+  document.body.appendChild(bar);
 
-  // tutaj dostajesz dane z backendu
-  overlay.innerText = "Dane z API:\n" + JSON.stringify(response.data, null, 2);
-});
+  // 3. Przesuń stronę w dół, żeby baner nie zakrywał
+  document.body.style.paddingTop = "40px";
+}
