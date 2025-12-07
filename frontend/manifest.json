@@ -1,20 +1,23 @@
 {
-  "manifest_version": 3,
-  "name": "QR Code with SSL Status",
-  "description": "Generuje QR z linkiem do strony oraz informacjami o certyfikacie SSL.",
+  "manifest_version": 2,
+  "name": "Moja Nakładka",
   "version": "1.0",
-  "permissions": ["activeTab"],
-  "background": {
-    "service_worker": "background.js"
-  },
-  "action": {
-    "default_popup": "popup.html"
-  },
+  "description": "Overlay + fetch do API",
+  
+  "permissions": [
+    "tabs",
+    "https://twoje-api.pl/*"
+  ],
+
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"]
     }
   ],
-  "host_permissions": ["http://*/*", "https://*/*"]
+
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  }
 }
