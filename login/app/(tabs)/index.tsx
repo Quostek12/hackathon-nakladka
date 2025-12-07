@@ -65,6 +65,7 @@ export default function TabOneScreen() {
       </View>
 
       {scannedQRCodes.length > 0 && (() => {
+        const backCode = scannedQRCodes[0];
         const last = scannedQRCodes[0] || '';
         const hasTLS = last.includes('TLSv1.3');
         const hasHTTPS = last.toLowerCase().includes('https');

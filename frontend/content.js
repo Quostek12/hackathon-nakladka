@@ -56,6 +56,15 @@ if (document.readyState === "loading") {
 
 async function init() {
   try {
+    const grain = await fetch("http://localhost:8000/qr/start")
+      .then((response) => response.json())
+      .then((data) => {
+        return data;
+      })
+      .catch((error) => {
+        console.error("Błąd przy pobieraniu danych grain:", error);
+        return null;
+      });
     const hostname = window.location.hostname;
     const data = await fetch(
       "https://api.ssllabs.com/api/v3/analyze?host=" + hostname
