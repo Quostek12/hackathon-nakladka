@@ -1,23 +1,26 @@
-{
-  "manifest_version": 2,
-  "name": "Moja Nakładka",
-  "version": "1.0",
-  "description": "Overlay + fetch do API",
-  
-  "permissions": [
-    "tabs",
-    "https://twoje-api.pl/*"
-  ],
+const api = typeof browser !== "undefined" ? browser : chrome;
 
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
-    }
-  ],
+// api.runtime.onMessage.addListener((message, sender, sendResponse) => {
+//   if (message.type === "GET_DATA") {
+//     // Tu odpalasz fetch do swojego backendu
+//     fetch("https://twoje-api.pl/api/status", {
+//       method: "GET",
+//       headers: {
+//         "Accept": "application/json"
+//         // ew. Authorization: "Bearer XYZ"
+//       }
+//     })
+//       .then(res => res.json())
+//       .then(data => {
+//         sendResponse({ data });
+//       })
+//       .catch(err => {
+//         console.error(err);
+//         sendResponse({ error: String(err) });
+//       });
 
-  "background": {
-    "scripts": ["background.js"],
-    "persistent": false
-  }
-}
+//     // ważne w MV3: mówimy że odpowiedź będzie async
+//     return true;
+//   }
+// });
+
