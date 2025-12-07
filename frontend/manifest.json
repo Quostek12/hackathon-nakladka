@@ -1,12 +1,15 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Prawda w sieci",
   "version": "1.0",
   "description": "Zobacz to co moze byc ukryte",
   
   "permissions": [
-    "tabs",
-    "https://twoje-api.pl/*"
+    "tabs"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
   ],
 
   "content_scripts": [
@@ -17,11 +20,12 @@
   ],
 
   "background": {
-    "scripts": ["background.js"],
-    "persistent": false
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
   },
-    "browser_action": {
+
+  "action": {
     "default_title": "Moje rozszerzenie",
-    "default_popup": "popup.html"
+    "default_popup": "public/popup.html"
   }
 }

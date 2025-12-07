@@ -6,4 +6,4 @@ class LoginRequest(SQLModel):
 
 class Token(SQLModel):
     access_token: str
-    toke_type: str = "bearer"
+    token_type: str = "bearer"

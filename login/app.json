@@ -14,7 +14,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Aplikacja potrzebuje dostępu do kamery aby skanować kody QR",
+        "NSPhotoLibraryUsageDescription": "Aplikacja potrzebuje dostępu do galerii aby zapisywać zdjęcia",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.quostek12.login"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +28,12 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.quostek12.login",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -34,6 +45,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5d6e3e23-20c8-44d3-b032-72c0fa640657"
+      }
+    },
+    "owner": "quostek12"
   }
 }

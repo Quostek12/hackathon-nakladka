@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+        }
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 220px;
+        }
+    </style>
+</head>
+<body>
+    <div id="qrcode"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // Listen for messages from parent
+        window.addEventListener('message', function(event) {
+            if (event.source !== window.parent) return;
+            
+            const data = event.data;
+            if (data.type === 'GENERATE_QR') {
+                console.log('Generating QR for:', data.text);
+                const qrcodeDiv = document.getElementById('qrcode');
+                qrcodeDiv.innerHTML = ''; // Clear previous
+                
+                if (typeof QRCode !== 'undefined') {
+                    new QRCode(qrcodeDiv, {
+                        text: data.text,
+                        width: 200,
+                        height: 200,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } else {
+                    qrcodeDiv.textContent = 'QRCode library not loaded';
+                }
+            }
+        });
+        
+        // Signal that iframe is ready
+        window.parent.postMessage({ type: 'IFRAME_READY' }, '*');
+    </script>
+</body>
+</html>
