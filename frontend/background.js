@@ -1,8 +1,4 @@
-chrome.runtime.onInstalled.addListener(() => {
-  console.log("Rozszerzenie zainstalowane.");
-});
-
-// Sprawdzanie certyfikatu SSL
+// Funkcja sprawdzająca certyfikat SSL
 async function checkSSLStatus(url) {
   try {
     const response = await fetch(url, { method: "HEAD" });
@@ -15,9 +11,12 @@ async function checkSSLStatus(url) {
   return "Nie można sprawdzić SSL";
 }
 
-// Nasłuchujemy na kliknięcie rozszerzenia
+// Nasłuchujemy na akcje rozszerzenia (np. kliknięcie ikony rozszerzenia)
 chrome.action.onClicked.addListener(async (tab) => {
+  // Sprawdzamy certyfikat SSL dla aktualnie otwartej strony
   const status = await checkSSLStatus(tab.url);
+
+  // Wysyłamy dane do content script
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
     function: injectQRCode,
