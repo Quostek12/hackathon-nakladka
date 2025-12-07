@@ -6,7 +6,6 @@ if (document.readyState === "loading") {
 
 function init() {
   // 1. Zmiana tytułu strony
-  document.title = "[EXT] " + document.title;
 
   // 2. Dodanie banera na górze strony
   const bar = document.createElement("div");
