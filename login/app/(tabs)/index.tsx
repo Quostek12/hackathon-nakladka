@@ -26,9 +26,6 @@ export default function TabOneScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scannedQRCodes, setScannedQRCodes] = useState<string[]>([]);
   const [isScanning, setIsScanning] = useState(true);
-  const [securityStatus, setSecurityStatus] = useState<
-    "danger" | "warning" | "safe" | null
-  >(null);
 
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
@@ -44,82 +41,29 @@ export default function TabOneScreen() {
     })();
   }, [permission, requestPermission]);
 
-  // Obsługa skanowanego QR code
-  useEffect(() => {
-    if (scannedQRCodes.length === 0) return;
-
-    const qrData = scannedQRCodes[0];
-    const parsed = parseQRData(qrData);
-    const backendData = parsed.backendData;
-
-    // Zapytanie do backendu
-    const confirmQR = async () => {
-      try {
-        const response = await fetch("http://localhost:8000/qr/confirm", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ backendData }),
-        });
-        console.log("QR confirmed:", await response.json());
-      } catch (error) {
-        console.error("Błąd potwierdzenia QR:", error);
-      }
-    };
-
-    confirmQR();
-
-    // Sprawdzenie bezpieczeństwa
-    const hasTLS =
-      backendData?.tls_version?.includes("TLSv1.3") ||
-      qrData.includes("TLSv1.3");
-    const hasHTTPS = qrData.toLowerCase().includes("https");
-    const hasGov = qrData.toLowerCase().includes(".gov");
-
-    if (!hasTLS || !hasHTTPS) {
-      setSecurityStatus("danger");
-    } else if (!hasGov) {
-      setSecurityStatus("warning");
-    } else {
-      setSecurityStatus("safe");
-    }
-  }, [scannedQRCodes]);
-
-  // Parsowanie danych z QR code
-  const parseQRData = (qrData: string) => {
-    try {
-      // Szukamy linii zaczynającej się od "Backend Data:"
-      const lines = qrData.split("\n");
-      let backendData = null;
-
-      for (const line of lines) {
-        if (line.startsWith("Backend Data:")) {
-          const jsonStr = line.replace("Backend Data: ", "");
-          backendData = JSON.parse(jsonStr);
-          break;
-        }
-      }
-
-      return {
-        backendData,
-        fullText: qrData,
-      };
-    } catch (error) {
-      console.error("Błąd parsowania QR:", error);
-      return {
-        backendData: null,
-        fullText: qrData,
-      };
-    }
-  };
-
   // Funkcja obsługi skanowania QR
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (isScanning) {
-      setScannedQRCodes((prev: any) => [data, ...prev]);
-      const parsed = parseQRData(data);
-      console.log("Backend Data:", parsed.backendData);
+      setScannedQRCodes((prev) => [data, ...prev]);
+
+      // Wyciągnij nonce (pierwsze 32 znaki)
+      const nonce = data.substring(0, 32);
+
+      // Zapytanie do endpointu
+      fetch("http://localhost:8000/qr/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ nonce }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Potwierdzenie QR:", data);
+        })
+        .catch((error) => {
+          console.error("Błąd potwierdzenia QR:", error);
+        });
 
       // Opóźnij możliwość skanowania na 100ms
       setIsScanning(false);
@@ -173,13 +117,15 @@ export default function TabOneScreen() {
         </View>
       )}
 
-      {securityStatus === "safe" && (
-        <View style={styles.lastCodeContainer}>
-          <View style={styles.safeBox}>
-            <Text style={styles.safeText}>Bezpieczna strona rządowa</Text>
-          </View>
-        </View>
-      )}
+          // All good -> green safe
+          return (
+            <View style={styles.lastCodeContainer}>
+              <View style={styles.safeBox}>
+                <Text style={styles.safeText}>Bezpieczna strona rządowa</Text>
+              </View>
+            </View>
+          );
+        })()}
     </View>
   );
 }
