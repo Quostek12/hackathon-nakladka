@@ -4,12 +4,25 @@ if (document.readyState === "loading") {
   init();
 }
 
-function init() {
-  // 1. Zmiana tytułu strony
-
+async function init() {
+  await fetch("https://api.ssllabs.com/api/v3/analyze?host=example.com")
+    .then((response) => response.json())
+    .then((data) => {
+      console.log(data); // Zawiera dane o certyfikacie SSL
+    })
+    .catch((error) => {
+      console.error("Błąd przy pobieraniu danych SSL:", error);
+    });
   // 2. Dodanie banera na górze strony
+  const originalFetch = window.fetch;
+
+  window.fetch = async (url, options) => {
+    const domain = new URL(url).hostname;
+    console.log("Domena zapytania:", domain);
+    return originalFetch(url, options);
+  };
   const bar = document.createElement("div");
-  bar.textContent = "To jest nakładka z mojego rozszerzenia 🙃";
+  bar.textContent = "To jest nakładka z mojego rozszerzenia 🙃 Dane ->" + dane;
   bar.style.cssText = `
     position: fixed;
     top: 0;
