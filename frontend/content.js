@@ -2,53 +2,48 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
 
 api.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'GET_SECURITY_INFO') {
-    console.log('Sprawdzanie informacji bezpieczeństwa...');
-    
+  if (request.type === "GET_SECURITY_INFO") {
     const result = {
       csp: "Brak CSP",
-      tls: "Nieznany"
+      tls: "Nieznany",
     };
     const hostname = window.location.hostname;
-    
+
     // Sprawdzenie CSP z meta tagów
-    const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+    const cspMeta = document.querySelector(
+      'meta[http-equiv="Content-Security-Policy"]'
+    );
     if (cspMeta) {
-      console.log('CSP znaleziony w meta tag');
       result.csp = "CSP: Aktywny (meta tag)";
     }
-    
+
     // Pobierz szczegóły TLS z backendu
     const tlsPromise = fetch(`http://localhost:8000/cert/tls?site=${hostname}`)
-      .then(resp => resp.json())
-      .then(tlsData => {
+      .then((resp) => resp.json())
+      .then((tlsData) => {
         if (tlsData && tlsData.tls_version) {
           const version = String(tlsData.tls_version);
           result.tls = version;
-        } else {
-          result.tls = "brak tls";
         }
       })
-      .catch(err => {
-        console.error('Błąd pobierania TLS z backendu:', err);
-        result.tls = "błąd pobrania tls";
+      .catch((err) => {
+        console.error("Błąd pobierania TLS z backendu:", err);
       });
-    
+
     // Sprawdzenie CSP z nagłówków HTTP poprzez fetch
-    const cspPromise = fetch(window.location.href, { method: 'HEAD' })
-      .then(response => {
-        const cspHeader = response.headers.get('content-security-policy');
-        console.log('CSP header:', cspHeader);
+    const cspPromise = fetch(window.location.href, { method: "HEAD" })
+      .then((response) => {
+        const cspHeader = response.headers.get("content-security-policy");
         if (cspHeader && result.csp === "Brak CSP") {
           result.csp = "CSP: Aktywny (HTTP header)";
         }
       })
-      .catch(error => {
-        console.error('Błąd sprawdzania CSP:', error);
+      .catch((error) => {
+        console.error("Błąd sprawdzania CSP:", error);
       });
 
     Promise.all([tlsPromise, cspPromise]).finally(() => sendResponse(result));
-    
+
     return true; // Asynchroniczna odpowiedź
   }
 });
@@ -62,7 +57,9 @@ if (document.readyState === "loading") {
 async function init() {
   try {
     const hostname = window.location.hostname;
-    const data = await fetch("https://api.ssllabs.com/api/v3/analyze?host=" + hostname)
+    const data = await fetch(
+      "https://api.ssllabs.com/api/v3/analyze?host=" + hostname
+    )
       .then((response) => response.json())
       .then((data) => {
         console.log(data);
@@ -72,11 +69,11 @@ async function init() {
         console.error("Błąd przy pobieraniu danych SSL:", error);
         return null;
       });
-      await fetch("http://localhost:8000/cert/tls?site=" + hostname)
+    await fetch("http://localhost:8000/cert/tls?site=" + hostname)
       .then((response) => response.json())
       .then((data) => {
         console.log(data);
-            });
+      });
 
     const originalFetch = window.fetch;
     window.fetch = async (url, options) => {
