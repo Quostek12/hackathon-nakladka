@@ -16,6 +16,8 @@ from qr_code_generator import qr_router, qr_service, websocket_router
 from user.user import User, UserPublic, UserWithRolePublic
 from role.role import RolePublic, Role, RoleWithUsersPublic
 
+from cert import get_cert
+
 Role.model_rebuild()
 RolePublic.model_rebuild()
 RoleWithUsersPublic.model_rebuild()
@@ -69,5 +71,10 @@ def get_me(curr_user: User = Depends(current_user.get_current_user)):
 def dodaj(b: User):
     return [b, {"Jaka metoda": "Post"}]
 
+@app.get("/cert/tls")
+def c(site: str, session: session.SessionDep):
+    return get_cert.get_tls_info(site)
 
-
+@app.get("/cert/all")
+def c(site: str, session: session.SessionDep):
+    return get_cert.get_full_chain(site)
