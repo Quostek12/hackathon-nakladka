@@ -1,4 +1,3 @@
-// Listener dla wiadomości z popup
 const api = typeof browser !== "undefined" ? browser : chrome;
 
 api.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -9,7 +8,6 @@ api.runtime.onMessage.addListener((request, sender, sendResponse) => {
     };
     const hostname = window.location.hostname;
 
-    // Sprawdzenie CSP z meta tagów
     const cspMeta = document.querySelector(
       'meta[http-equiv="Content-Security-Policy"]'
     );
@@ -17,7 +15,6 @@ api.runtime.onMessage.addListener((request, sender, sendResponse) => {
       result.csp = "CSP: Aktywny (meta tag)";
     }
 
-    // Pobierz szczegóły TLS z backendu
     const tlsPromise = fetch(`http://localhost:8000/cert/tls?site=${hostname}`)
       .then((resp) => resp.json())
       .then((tlsData) => {
@@ -30,7 +27,6 @@ api.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.error("Błąd pobierania TLS z backendu:", err);
       });
 
-    // Sprawdzenie CSP z nagłówków HTTP poprzez fetch
     const cspPromise = fetch(window.location.href, { method: "HEAD" })
       .then((response) => {
         const cspHeader = response.headers.get("content-security-policy");
@@ -44,7 +40,7 @@ api.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     Promise.all([tlsPromise, cspPromise]).finally(() => sendResponse(result));
 
-    return true; // Asynchroniczna odpowiedź
+    return true; 
   }
 });
 

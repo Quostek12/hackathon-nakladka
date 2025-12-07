@@ -4,7 +4,6 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 
-// Helper: convert hex color to rgba with given alpha (0..1)
 function colorWithAlpha(hex: string, alpha: number) {
   const h = hex.replace("#", "");
   const bigint = parseInt(
@@ -26,13 +25,15 @@ export default function TabOneScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scannedQRCodes, setScannedQRCodes] = useState<string[]>([]);
   const [isScanning, setIsScanning] = useState(true);
+  const [securityStatus, setSecurityStatus] = useState<
+    "danger" | "warning" | "safe" | null
+  >(null);
 
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
 
   const cameraRef = useRef<CameraView>(null);
 
-  // Zezwolenia
   useEffect(() => {
     (async () => {
       if (!permission) {
@@ -41,31 +42,44 @@ export default function TabOneScreen() {
     })();
   }, [permission, requestPermission]);
 
-  // Funkcja obsługi skanowania QR
+  useEffect(() => {
+    if (scannedQRCodes.length === 0) return;
+
+    const qrData = scannedQRCodes[0];
+
+    const hasTLS = qrData.includes("TLSv1.3");
+    const hasHTTPS = qrData.toLowerCase().includes("https");
+    const hasGov = qrData.toLowerCase().includes(".gov");
+
+    if (!hasTLS || !hasHTTPS) {
+      setSecurityStatus("danger");
+    } else if (!hasGov) {
+      setSecurityStatus("warning");
+    } else {
+      setSecurityStatus("safe");
+    }
+
+    const nonce = qrData.substring(0, 32);
+    fetch("http://localhost:8000/qr/confirm", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ nonce }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Potwierdzenie QR:", data);
+      })
+      .catch((error) => {
+        console.error("Błąd potwierdzenia QR:", error);
+      });
+  }, [scannedQRCodes]);
+
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (isScanning) {
       setScannedQRCodes((prev) => [data, ...prev]);
 
-      // Wyciągnij nonce (pierwsze 32 znaki)
-      const nonce = data.substring(0, 32);
-
-      // Zapytanie do endpointu
-      fetch("http://localhost:8000/qr/confirm", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ nonce }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("Potwierdzenie QR:", data);
-        })
-        .catch((error) => {
-          console.error("Błąd potwierdzenia QR:", error);
-        });
-
-      // Opóźnij możliwość skanowania na 100ms
       setIsScanning(false);
       setTimeout(() => setIsScanning(true), 100);
     }
@@ -117,15 +131,13 @@ export default function TabOneScreen() {
         </View>
       )}
 
-          // All good -> green safe
-          return (
-            <View style={styles.lastCodeContainer}>
-              <View style={styles.safeBox}>
-                <Text style={styles.safeText}>Bezpieczna strona rządowa</Text>
-              </View>
-            </View>
-          );
-        })()}
+      {securityStatus === "safe" && (
+        <View style={styles.lastCodeContainer}>
+          <View style={styles.safeBox}>
+            <Text style={styles.safeText}>Bezpieczna strona rządowa</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
