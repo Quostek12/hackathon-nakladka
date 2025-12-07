@@ -1,0 +1,31 @@
+{
+  "name": "qr-ssl-extension",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "rollup -c --watch",
+    "build": "rollup -c"
+  },
+  "description": "",
+  "main": "background.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^21.0.0",
+    "@rollup/plugin-node-resolve": "^13.0.6",
+    "rollup": "^2.60.0",
+    "rollup-plugin-css-only": "^4.5.5",
+    "rollup-plugin-svelte": "^7.0.0",
+    "rollup-plugin-terser": "^7.0.2"
+  },
+  "dependencies": {
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "qrcode": "^1.5.4",
+    "rollup": "^2.79.2",
+    "rollup-plugin-svelte": "^7.2.3",
+    "rollup-plugin-terser": "^7.0.2",
+    "svelte": "^5.45.6"
+  }
+}
