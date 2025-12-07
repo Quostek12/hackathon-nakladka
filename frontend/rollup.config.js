@@ -15,6 +15,7 @@ export default {
       compilerOptions: {
         dev: false, // Wyłącz tryb deweloperski w produkcji
       },
+      emitCss: false, // Wbudowuje CSS bezpośrednio w JS
     }),
     resolve(), // Pomaga Rollup znaleźć moduły z `node_modules`
     commonjs(), // Obsługuje moduły CommonJS
