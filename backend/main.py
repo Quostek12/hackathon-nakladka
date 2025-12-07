@@ -8,12 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from auth import current_user
 
-from user import user_router
+from user import user_router, user_service
+from user.user import User, UserPublic, UserWithRolePublic
 from role import role_router
 from login import login_router
 from qr_code_generator import qr_router, qr_service, websocket_router
 
-from user.user import User, UserPublic, UserWithRolePublic
 from role.role import RolePublic, Role, RoleWithUsersPublic
 
 from cert import get_cert
@@ -40,9 +40,24 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-origins = ["http://localhost:5173","https://localhost:5173", "http://localhost:8081","https://localhost:8081"]
+origins = [
+    "http://localhost:5173",
+    "https://localhost:5173",
+    "http://localhost:8081",
+    "https://localhost:8082",
+    "http://10.250.161.83:8082",
+    "http://localhost:8082",
+    "http://127.0.0.1:8082",
+    "*"
+]
 
-app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(user_router.router)
 app.include_router(role_router.router)
@@ -62,6 +77,13 @@ def root():
 @app.get("/test")
 def test():
     return [{"msg": "asd"}, {"msg": "123"}]
+
+@app.post("/register")
+def register(user_data: User, session_dep = Depends(session.get_session)):
+    """Endpoint do rejestracji użytkownika (test)"""
+    from user.user import UserPost
+    user_post = UserPost.model_validate(user_data)
+    return user_service.create_user(user_post, session_dep)
 
 @app.get("/me")
 def get_me(curr_user: User = Depends(current_user.get_current_user)):

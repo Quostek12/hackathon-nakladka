@@ -10,7 +10,12 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const BASE_URL = 'http://localhost:8000'; // zmień gdy backend jest hostowany inaczej
+  // Wykryj czy to web czy device
+  // Na web: localhost:8000
+  // Na device (iOS/Android): IP komputera
+  const BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:8000'  // Web development
+    : 'http://10.250.161.83:8000'; // Device/tunnel (zmień IP)
 
   const handleLogin = async () => {
     setError('');
