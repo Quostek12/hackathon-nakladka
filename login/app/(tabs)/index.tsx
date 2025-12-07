@@ -64,13 +64,43 @@ export default function TabOneScreen() {
         />
       </View>
 
-      {scannedQRCodes.length > 0 && (
-        <View style={styles.lastCodeContainer}>
-          <View style={[styles.lastCodeBox, { borderColor: theme.accent, backgroundColor: colorWithAlpha(theme.background, 0.98) }]}>
-            <Text style={[styles.lastCodeText, { color: theme.text }]}>{scannedQRCodes[0]}</Text>
+      {scannedQRCodes.length > 0 && (() => {
+        const last = scannedQRCodes[0] || '';
+        const hasTLS = last.includes('TLSv1.3');
+        const hasHTTPS = last.toLowerCase().includes('https');
+        const hasGov = last.toLowerCase().includes('.gov.');
+
+        // If missing TLSv1.3 or missing https -> red danger
+        if (!hasTLS || !hasHTTPS) {
+          return (
+            <View style={styles.lastCodeContainer}>
+              <View style={styles.dangerBox}>
+                <Text style={styles.dangerText}>Strona jest niebezpieczna z powodu braku szyfrowania.</Text>
+              </View>
+            </View>
+          );
+        }
+
+        // If has TLS and https but not gov -> yellow warning
+        if (!hasGov) {
+          return (
+            <View style={styles.lastCodeContainer}>
+              <View style={styles.warnBox}>
+                <Text style={styles.warnText}>Strona bezpieczna, ale nie rządowa.</Text>
+              </View>
+            </View>
+          );
+        }
+
+        // All good -> green safe
+        return (
+          <View style={styles.lastCodeContainer}>
+            <View style={styles.safeBox}>
+              <Text style={styles.safeText}>Bezpieczna strona rządowa</Text>
+            </View>
           </View>
-        </View>
-      )}
+        );
+      })()}
     </View>
   );
 }
@@ -140,6 +170,57 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     fontFamily: 'monospace',
+    textAlign: 'center',
+  },
+  dangerBox: {
+    width: '90%',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#ffd6d6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#ff4d4d',
+  },
+  dangerText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#cc0000',
+    textAlign: 'center',
+  },
+  warnBox: {
+    width: '90%',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#fff4cc',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#ffd11a',
+  },
+  warnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#b36b00',
+    textAlign: 'center',
+  },
+  safeBox: {
+    width: '90%',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#e6ffea',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#33cc66',
+  },
+  safeText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0b6623',
     textAlign: 'center',
   },
 });
