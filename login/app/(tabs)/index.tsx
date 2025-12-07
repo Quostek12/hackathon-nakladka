@@ -1,14 +1,21 @@
-
-import { StyleSheet, View, Text, ScrollView } from 'react-native';
-import { useState, useEffect, useRef } from 'react';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
+import { StyleSheet, View, Text, ScrollView } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import Colors from "@/constants/Colors";
+import { useColorScheme } from "@/components/useColorScheme";
 
 // Helper: convert hex color to rgba with given alpha (0..1)
 function colorWithAlpha(hex: string, alpha: number) {
-  const h = hex.replace('#', '');
-  const bigint = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+  const h = hex.replace("#", "");
+  const bigint = parseInt(
+    h.length === 3
+      ? h
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : h,
+    16
+  );
   const r = (bigint >> 16) & 255;
   const g = (bigint >> 8) & 255;
   const b = bigint & 255;
@@ -21,7 +28,7 @@ export default function TabOneScreen() {
   const [isScanning, setIsScanning] = useState(true);
 
   const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? 'light'];
+  const theme = Colors[colorScheme ?? "light"];
 
   const cameraRef = useRef<CameraView>(null);
 
@@ -38,7 +45,26 @@ export default function TabOneScreen() {
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (isScanning) {
       setScannedQRCodes((prev) => [data, ...prev]);
-      
+
+      // Wyciągnij nonce (pierwsze 32 znaki)
+      const nonce = data.substring(0, 32);
+
+      // Zapytanie do endpointu
+      fetch("http://localhost:8000/qr/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ nonce }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Potwierdzenie QR:", data);
+        })
+        .catch((error) => {
+          console.error("Błąd potwierdzenia QR:", error);
+        });
+
       // Opóźnij możliwość skanowania na 100ms
       setIsScanning(false);
       setTimeout(() => setIsScanning(true), 100);
@@ -50,57 +76,63 @@ export default function TabOneScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.cameraWrapper, { backgroundColor: theme.tint }]}
-      >
+      <View style={[styles.cameraWrapper, { backgroundColor: theme.tint }]}>
         <CameraView
           ref={cameraRef}
           style={styles.camera}
           facing="back"
           autofocus="on"
           barcodeScannerSettings={{
-            barcodeTypes: ['qr'],
+            barcodeTypes: ["qr"],
           }}
           onBarcodeScanned={handleBarCodeScanned}
         />
       </View>
 
-      {scannedQRCodes.length > 0 && (() => {
-        const last = scannedQRCodes[0] || '';
-        const hasTLS = last.includes('TLSv1.3');
-        const hasHTTPS = last.toLowerCase().includes('https');
-        const hasGov = last.toLowerCase().includes('.gov.');
+      {scannedQRCodes.length > 0 &&
+        (() => {
+          const last = scannedQRCodes[0] || "";
+          const nonce = last.substring(0, 32); // Pierwsze 32 znaki (nonce)
 
-        // If missing TLSv1.3 or missing https -> red danger
-        if (!hasTLS || !hasHTTPS) {
+          const hasTLS = last.includes("TLSv1.3");
+          const hasHTTPS = last.toLowerCase().includes("https");
+          const hasGov = last.toLowerCase().includes(".gov.");
+
+          // If missing TLSv1.3 or missing https -> red danger
+          if (!hasTLS || !hasHTTPS) {
+            return (
+              <View style={styles.lastCodeContainer}>
+                <View style={styles.dangerBox}>
+                  <Text style={styles.dangerText}>
+                    Strona jest niebezpieczna z powodu braku szyfrowania.
+                  </Text>
+                </View>
+              </View>
+            );
+          }
+
+          // If has TLS and https but not gov -> yellow warning
+          if (!hasGov) {
+            return (
+              <View style={styles.lastCodeContainer}>
+                <View style={styles.warnBox}>
+                  <Text style={styles.warnText}>
+                    Strona bezpieczna, ale nie rządowa.
+                  </Text>
+                </View>
+              </View>
+            );
+          }
+
+          // All good -> green safe
           return (
             <View style={styles.lastCodeContainer}>
-              <View style={styles.dangerBox}>
-                <Text style={styles.dangerText}>Strona jest niebezpieczna z powodu braku szyfrowania.</Text>
+              <View style={styles.safeBox}>
+                <Text style={styles.safeText}>Bezpieczna strona rządowa</Text>
               </View>
             </View>
           );
-        }
-
-        // If has TLS and https but not gov -> yellow warning
-        if (!hasGov) {
-          return (
-            <View style={styles.lastCodeContainer}>
-              <View style={styles.warnBox}>
-                <Text style={styles.warnText}>Strona bezpieczna, ale nie rządowa.</Text>
-              </View>
-            </View>
-          );
-        }
-
-        // All good -> green safe
-        return (
-          <View style={styles.lastCodeContainer}>
-            <View style={styles.safeBox}>
-              <Text style={styles.safeText}>Bezpieczna strona rządowa</Text>
-            </View>
-          </View>
-        );
-      })()}
+        })()}
     </View>
   );
 }
@@ -108,119 +140,119 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "flex-start",
     paddingTop: 30,
   },
   cameraWrapper: {
     width: 250,
     height: 320,
     borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#000',
+    overflow: "hidden",
+    backgroundColor: "#000",
   },
   camera: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   codesContainer: {
     flex: 1,
-    width: '100%',
+    width: "100%",
     paddingHorizontal: 15,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   codesLabel: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
   },
   codeItem: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
     borderRadius: 6,
     padding: 12,
     marginBottom: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#007AFF',
-    width: '90%',
-    alignSelf: 'center',
+    borderLeftColor: "#007AFF",
+    width: "90%",
+    alignSelf: "center",
   },
   codeText: {
     fontSize: 12,
-    color: '#333',
-    fontFamily: 'monospace',
-    textAlign: 'center',
+    color: "#333",
+    fontFamily: "monospace",
+    textAlign: "center",
   },
   lastCodeContainer: {
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
     marginTop: 14,
   },
   lastCodeBox: {
-    width: '90%',
+    width: "90%",
     paddingVertical: 16,
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   lastCodeText: {
     fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'monospace',
-    textAlign: 'center',
+    fontWeight: "600",
+    fontFamily: "monospace",
+    textAlign: "center",
   },
   dangerBox: {
-    width: '90%',
+    width: "90%",
     paddingVertical: 16,
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: '#ffd6d6',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#ffd6d6",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
-    borderColor: '#ff4d4d',
+    borderColor: "#ff4d4d",
   },
   dangerText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#cc0000',
-    textAlign: 'center',
+    fontWeight: "700",
+    color: "#cc0000",
+    textAlign: "center",
   },
   warnBox: {
-    width: '90%',
+    width: "90%",
     paddingVertical: 16,
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: '#fff4cc',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fff4cc",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
-    borderColor: '#ffd11a',
+    borderColor: "#ffd11a",
   },
   warnText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#b36b00',
-    textAlign: 'center',
+    fontWeight: "700",
+    color: "#b36b00",
+    textAlign: "center",
   },
   safeBox: {
-    width: '90%',
+    width: "90%",
     paddingVertical: 16,
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: '#e6ffea',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#e6ffea",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
-    borderColor: '#33cc66',
+    borderColor: "#33cc66",
   },
   safeText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#0b6623',
-    textAlign: 'center',
+    fontWeight: "700",
+    color: "#0b6623",
+    textAlign: "center",
   },
 });
